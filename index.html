@@ -252,6 +252,24 @@ table.doc-table tbody tr:nth-child(even):hover{ background: var(--tint-2); }
 .chart-legend i.line-swatch{ width:14px; height:3px; border-radius:2px; }
 
 .subpanel-title{ font-size:12px; font-weight:700; color:var(--navy); margin:0 0 8px; text-align:center; }
+
+/* ---------- Dealer Evaluation · destaque da nota final ---------- */
+.dealer-card{ position:relative; overflow:hidden; padding-top:18px; }
+.dealer-card::before{ content:""; position:absolute; left:0; top:0; right:0; height:4px; background:var(--dc, var(--accent)); }
+.dealer-card-name{ font-size:13.5px; font-weight:700; color:var(--navy); margin-bottom:12px; letter-spacing:.1px; }
+.dealer-score-wrap{
+  display:flex; align-items:center; gap:14px;
+  background:var(--dc-bg, var(--tint-2)); border:1px solid var(--dc-bd, var(--line));
+  border-radius:12px; padding:12px 14px; margin-bottom:16px;
+}
+.dealer-score-num{ font-size:34px; font-weight:800; line-height:1; color:var(--dc, var(--navy)); white-space:nowrap; }
+.dealer-score-meta{ display:flex; flex-direction:column; gap:4px; min-width:0; }
+.dealer-score-status{
+  align-self:flex-start; font-size:10.5px; font-weight:800; letter-spacing:.3px; text-transform:uppercase;
+  padding:2px 9px; border-radius:20px; background:var(--dc, var(--accent)); color:#fff;
+}
+.dealer-score-caption{ font-size:11px; color:var(--ink-2); line-height:1.35; }
+.dealer-score-caption b{ color:var(--navy); }
 .chart-empty-note{ text-align:center; color:var(--muted); font-size:11px; margin-top:6px; font-style:italic; }
 
 .grid3-eval{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
@@ -1268,16 +1286,36 @@ function initDealerEvaluation(){
     const rows = DEALER.filter(r=>r.dealer===d);
     const withGeral = rows.filter(r=>r.geral!==null && r.geral!==undefined).sort((a,b)=>a.mes_num-b.mes_num);
     const last = withGeral[withGeral.length-1];
-    let badge = '';
+
+    let scoreBlock = `
+      <div class="dealer-score-wrap">
+        <div class="dealer-score-num">—</div>
+        <div class="dealer-score-meta"><span class="dealer-score-caption">Sem nota lançada ainda</span></div>
+      </div>`;
+    let dc = 'var(--accent)', dcBg = 'var(--tint-2)', dcBd = 'var(--line)';
+
     if(last){
       const v = last.geral;
-      const cls = v>=0.9 ? 'ok' : (v>=0.7 ? 'w30' : 'late');
       const lbl = v>=0.9 ? 'Bom' : (v>=0.7 ? 'Atenção' : 'Crítico');
-      badge = `<span class="badge ${cls}" style="float:right;">${lbl} · ${fmtPct(pct(v))}</span>`;
+      dc  = v>=0.9 ? 'var(--ok-fg)'  : (v>=0.7 ? 'var(--w30-fg)' : 'var(--late-fg)');
+      dcBg= v>=0.9 ? 'var(--ok-bg)'  : (v>=0.7 ? 'var(--w30-bg)' : 'var(--late-bg)');
+      dcBd= dc;
+      const mesLbl = numToName[last.mes_num] || '';
+      const mandTxt = (last.mandatoria!==null && last.mandatoria!==undefined) ? `<b>${fmtPct(pct(last.mandatoria))}</b> mandatória` : 'mandatória n/d';
+      scoreBlock = `
+      <div class="dealer-score-wrap">
+        <div class="dealer-score-num">${fmtPct(pct(v))}</div>
+        <div class="dealer-score-meta">
+          <span class="dealer-score-status">${lbl}</span>
+          <span class="dealer-score-caption">Nota geral em <b>${esc(mesLbl)}</b> · ${mandTxt}</span>
+        </div>
+      </div>`;
     }
+
     return `
-    <div class="panel">
-      <h3 class="subpanel-title" style="text-align:left;">${esc(d)} ${badge}</h3>
+    <div class="panel dealer-card" style="--dc:${dc}; --dc-bg:${dcBg}; --dc-bd:${dcBd};">
+      <div class="dealer-card-name">${esc(d)}</div>
+      ${scoreBlock}
       <div id="chart-dealer-${i}"></div>
       <div class="chart-legend" id="chart-dealer-${i}-legend"></div>
     </div>`;
